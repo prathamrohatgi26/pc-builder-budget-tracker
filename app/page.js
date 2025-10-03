@@ -3,8 +3,8 @@
 import { useState, useEffect } from "react";
 import {
   saveChecklistData,
-  loadChecklistData,
-  getSessionId,
+  loadUserChecklist,
+  updateUserBudget,
   getCurrentUser,
   signOut,
 } from "../lib/database";
@@ -47,12 +47,13 @@ export default function Home() {
     cpuCooler: "",
   });
 
-  const totalBudget = 110000; // 1.1L in rupees
-  const [sessionId, setSessionId] = useState(null);
+  const [totalBudget, setTotalBudget] = useState(100000); // Default 1 lakh
   const [isLoading, setIsLoading] = useState(true);
   const [lastSaved, setLastSaved] = useState(null);
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [showBudgetEditor, setShowBudgetEditor] = useState(false);
+  const [newBudget, setNewBudget] = useState(100000);
 
   const toggleItem = (item) => {
     setChecklist((prev) => ({
@@ -77,13 +78,23 @@ export default function Home() {
 
   // Auto-save function
   const autoSave = async () => {
-    if (sessionId) {
-      try {
-        await saveChecklistData(checklist, prices, sessionId, partNames);
-        setLastSaved(new Date().toLocaleTimeString());
-      } catch (error) {
-        console.error("Auto-save failed:", error);
-      }
+    try {
+      await saveChecklistData(checklist, prices, partNames, totalBudget);
+      setLastSaved(new Date().toLocaleTimeString());
+    } catch (error) {
+      console.error("Auto-save failed:", error);
+    }
+  };
+
+  // Update budget
+  const handleUpdateBudget = async () => {
+    try {
+      await updateUserBudget(newBudget);
+      setTotalBudget(newBudget);
+      setShowBudgetEditor(false);
+      setLastSaved(new Date().toLocaleTimeString());
+    } catch (error) {
+      console.error("Failed to update budget:", error);
     }
   };
 
@@ -95,10 +106,7 @@ export default function Home() {
         setUser(currentUser);
 
         if (currentUser) {
-          const session = getSessionId();
-          setSessionId(session);
-
-          const data = await loadChecklistData(session);
+          const data = await loadUserChecklist();
           if (data.checklist && Object.keys(data.checklist).length > 0) {
             setChecklist(data.checklist);
           }
@@ -107,6 +115,10 @@ export default function Home() {
           }
           if (data.partNames && Object.keys(data.partNames).length > 0) {
             setPartNames(data.partNames);
+          }
+          if (data.totalBudget) {
+            setTotalBudget(data.totalBudget);
+            setNewBudget(data.totalBudget);
           }
         }
       } catch (error) {
@@ -167,14 +179,14 @@ export default function Home() {
 
   // Auto-save when checklist, prices, or part names change
   useEffect(() => {
-    if (!isLoading && sessionId) {
+    if (!isLoading && user) {
       const timeoutId = setTimeout(() => {
         autoSave();
       }, 1000); // Auto-save after 1 second of inactivity
 
       return () => clearTimeout(timeoutId);
     }
-  }, [checklist, prices, partNames, sessionId, isLoading]);
+  }, [checklist, prices, partNames, totalBudget, isLoading, user]);
 
   const resetChecklist = async () => {
     const resetChecklistData = {};
@@ -310,6 +322,58 @@ export default function Home() {
           <p className="text-slate-600 dark:text-slate-400 mb-6">
             Complete checklist for building your PC
           </p>
+
+          {/* Budget Management */}
+          <div className="bg-white dark:bg-slate-800 rounded-lg p-4 shadow-lg mb-6">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+              <div className="flex flex-col sm:flex-row items-center gap-4">
+                <button
+                  onClick={() => setShowBudgetEditor(!showBudgetEditor)}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  {showBudgetEditor ? 'Cancel' : 'Update Budget'}
+                </button>
+                <div className="text-sm text-slate-600 dark:text-slate-400">
+                  Current Budget: ₹{totalBudget.toLocaleString()}
+                </div>
+              </div>
+              {lastSaved && (
+                <div className="text-sm text-slate-600 dark:text-slate-400">
+                  Last saved: {lastSaved}
+                </div>
+              )}
+            </div>
+
+            {/* Budget Editor */}
+            {showBudgetEditor && (
+              <div className="mt-4 border-t border-slate-200 dark:border-slate-700 pt-4">
+                <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-3">
+                  Update Your Budget
+                </h3>
+                <div className="flex flex-col sm:flex-row gap-4 items-end">
+                  <div className="flex-1">
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                      New Budget (₹)
+                    </label>
+                    <input
+                      type="number"
+                      value={newBudget}
+                      onChange={(e) => setNewBudget(parseInt(e.target.value) || 0)}
+                      className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Enter your budget"
+                      min="0"
+                    />
+                  </div>
+                  <button
+                    onClick={handleUpdateBudget}
+                    className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                  >
+                    Update Budget
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Budget Display */}
           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg p-6 shadow-lg mb-6">

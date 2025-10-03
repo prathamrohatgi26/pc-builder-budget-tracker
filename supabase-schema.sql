@@ -1,10 +1,10 @@
--- Create the pc_checklist table
+-- Create the pc_checklist table (one per user)
 CREATE TABLE IF NOT EXISTS pc_checklist (
-  id TEXT PRIMARY KEY,
-  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   checklist_data JSONB NOT NULL DEFAULT '{}',
   prices_data JSONB NOT NULL DEFAULT '{}',
   part_names_data JSONB NOT NULL DEFAULT '{}',
+  total_budget INTEGER NOT NULL DEFAULT 100000, -- Default 1 lakh
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
