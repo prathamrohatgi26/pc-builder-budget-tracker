@@ -20,7 +20,6 @@ export default function Home() {
     gpu: false,
     psu: false,
     case: false,
-
     // Cooling
     cpuCooler: false,
   });
@@ -54,6 +53,7 @@ export default function Home() {
   const [authLoading, setAuthLoading] = useState(true);
   const [showBudgetEditor, setShowBudgetEditor] = useState(false);
   const [newBudget, setNewBudget] = useState(100000);
+  const [copySuccess, setCopySuccess] = useState(false);
 
   const toggleItem = (item) => {
     setChecklist((prev) => ({
@@ -223,6 +223,57 @@ export default function Home() {
     }
   };
 
+  // Share build function
+  const handleShareBuild = async () => {
+    try {
+      let buildText = "PC Build Details\n";
+      buildText += "=".repeat(50) + "\n\n";
+
+      let hasItems = false;
+
+      categories.forEach((category) => {
+        const categoryItems = category.items.filter(
+          (item) => checklist[item.key]
+        );
+
+        if (categoryItems.length > 0) {
+          hasItems = true;
+          buildText += `${category.title}\n`;
+          buildText += "-".repeat(50) + "\n";
+
+          categoryItems.forEach((item) => {
+            buildText += `\n${item.label}`;
+            if (partNames[item.key] && partNames[item.key].trim()) {
+              buildText += `: ${partNames[item.key]}`;
+            }
+            if (prices[item.key] && prices[item.key] > 0) {
+              buildText += ` - ₹${prices[item.key].toLocaleString()}`;
+            }
+            buildText += "\n";
+          });
+
+          buildText += "\n";
+        }
+      });
+
+      if (!hasItems) {
+        buildText += "No items selected yet.\n";
+      } else {
+        buildText += "=".repeat(50) + "\n";
+        buildText += `Total Spent: ₹${totalSpent.toLocaleString()}\n`;
+        buildText += `Total Budget: ₹${totalBudget.toLocaleString()}\n`;
+        buildText += `Remaining: ₹${remainingBudget.toLocaleString()}\n`;
+      }
+
+      await navigator.clipboard.writeText(buildText);
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
+    } catch (error) {
+      console.error("Failed to copy build:", error);
+      alert("Failed to copy build to clipboard");
+    }
+  };
+
   const completedCount = Object.values(checklist).filter(Boolean).length;
   const totalCount = Object.keys(checklist).length;
   const progressPercentage = Math.round((completedCount / totalCount) * 100);
@@ -265,7 +316,7 @@ export default function Home() {
         },
         {
           key: "cpuCooler",
-          label: "AIO/Air Cooler",
+          label: "AIO / Air Cooler",
         },
         { key: "case", label: "PC Case" },
       ],
@@ -312,12 +363,24 @@ export default function Home() {
             <h1 className="text-3xl sm:text-4xl font-bold text-slate-800 dark:text-slate-200 text-center sm:text-left">
               PC Parts Checklist
             </h1>
-            <button
-              onClick={handleSignOut}
-              className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors text-sm sm:text-base"
-            >
-              Sign Out
-            </button>
+            <div className="flex gap-3">
+              <button
+                onClick={handleShareBuild}
+                className={`px-4 py-2 rounded-lg transition-colors text-sm sm:text-base ${
+                  copySuccess
+                    ? "bg-green-600 text-white"
+                    : "bg-purple-600 text-white hover:bg-purple-700"
+                }`}
+              >
+                {copySuccess ? "✓ Copied!" : "Share Build"}
+              </button>
+              <button
+                onClick={handleSignOut}
+                className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors text-sm sm:text-base"
+              >
+                Sign Out
+              </button>
+            </div>
           </div>
           <p className="text-slate-600 dark:text-slate-400 mb-6">
             Complete checklist for building your PC
