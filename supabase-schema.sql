@@ -5,6 +5,8 @@ CREATE TABLE IF NOT EXISTS pc_checklist (
   prices_data JSONB NOT NULL DEFAULT '{}',
   part_names_data JSONB NOT NULL DEFAULT '{}',
   total_budget INTEGER NOT NULL DEFAULT 100000, -- Default 1 lakh
+  currency VARCHAR(3) NOT NULL DEFAULT 'INR', -- Currency code (INR, USD, EUR, etc.)
+  other_components JSONB NOT NULL DEFAULT '[]', -- Array of custom components
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
