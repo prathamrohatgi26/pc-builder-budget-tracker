@@ -488,7 +488,10 @@ export default function Home() {
         {/* Header */}
         <div className="mb-8">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
-            <h1 className="text-3xl sm:text-4xl font-bold text-slate-800 dark:text-slate-200 text-center sm:text-left">
+            <h1
+              className="text-3xl sm:text-7xl font-bold text-slate-800 dark:text-slate-200 text-center sm:text-left"
+              style={{ fontFamily: "var(--font-custom)" }}
+            >
               PC Parts Checklist
             </h1>
             <div className="flex gap-3">
