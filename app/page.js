@@ -367,8 +367,19 @@ export default function Home() {
   };
 
   // Handle removing component
-  const handleRemoveComponent = (id) => {
-    setOtherComponents((prev) => prev.filter((comp) => comp.id !== id));
+  const handleRemoveComponent = async (id) => {
+    const updatedComponents = otherComponents.filter((comp) => comp.id !== id);
+    setOtherComponents(updatedComponents);
+    
+    // Save immediately when removing a component
+    if (user) {
+      try {
+        await saveChecklistData(checklist, prices, partNames, totalBudget, currency, updatedComponents);
+        setLastSaved(new Date().toLocaleTimeString());
+      } catch (error) {
+        console.error("Failed to save after removing component:", error);
+      }
+    }
   };
 
   // Handle toggling component
